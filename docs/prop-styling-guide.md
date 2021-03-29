@@ -1,55 +1,52 @@
-# The prop styling guide
+# The prop-styling guide
 
-Why you should choose prop styling:
+- [Basic styling](#basic-styling)
+- [Conditional styling](#conditional-styling)
+- [Custom css](#custom-css)
+- [Styling tips](#styling-tips)
 
-**✓ Familiar tailwind experience**<br/>Instead of adding classes in the class attribute, we add them to the tw prop:
+There are two ways to style in twin:
+
+1. [Create styled components with the styled import](https://github.com/ben-rogerson/twin.macro/blob/master/docs/styled-import-guide.md)
+2. Style existing elements with the tw and css props **<- You are here**
+
+## Why use prop styling
+
+Here are some reasons why you might choose to style with props:
+
+**It’s similar to styling with tailwind**<br/>Instead of adding classes in the `class` attribute, they get added in the `tw` prop:
 
 ```js
 // In tailwind
-<div class="bg-black text-white"></div>
+;<div class="bg-black text-white"></div>
 
 // In twin.macro
-<div tw="bg-black text-white"></div>
+;<div tw="bg-black text-white"></div>
 ```
 
-**✓ Better debugging and traceability**<br/>The `data-tw` prop contains a preserved list of tailwind classes in your browser devtools:
+> Twin can also convert classes added in the `className` attribute with the [includeClassNames](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md#includeClassNames) feature.
+
+**Better debugging in devtools**<br/>After twin converts your classes, they are added to a `data-tw` prop for easier trace backs:
 
 ```js
 <div class="n644fs2" data-tw="bg-black text-white"></div>
 ```
 
-**✓ Less imports required**<br/>
-With [babel-plugin-twin](https://github.com/ben-rogerson/babel-plugin-twin) added, you can use the `tw` prop anytime:
+> The [data-tw prop](<(https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md#dataTwProp)>) only shows in development (by default)
 
-```js
-<div tw="bg-black text-white"></div>
-```
-
-Otherwise, add the twin import to activate the prop:
+**Less imports to use**<br/>
+A single nameless import activates the tw prop:
 
 ```js
 import 'twin.macro'
 ;<div tw="bg-black text-white"></div>
 ```
 
-Instead of adding tailwind classes in the `class`/`className` attribute - like we do in Tailwind - we add classes to the tw prop. This
-
-Read on to get productive with prop styling in twin...
-
-### This guide covers
-
-- [Basic styling](#basic-styling)
-- [Conditional styling](#conditional-styling)
-  - [Dealing with long class sets](#move-long-class-sets-out-of-jsx)
-- [Adding custom css](#adding-custom-css)
-  - [Basic css styling](#basic-css-styling)
-  - [Advanced css styling](#advanced-css-styling)
-  - [Mixing css with tailwind classes](#mixing-css-with-tailwind-classes)
-- [Pro styling tips](#pro-styling-tips)
+> Install [babel-plugin-twin](https://github.com/ben-rogerson/babel-plugin-twin) to use the `tw` prop without an import.
 
 ## Basic styling
 
-You can add basic styles with the tw prop when conditional styles are not needed:
+Instead of adding classes in the `class` or `className` attribute - like we do in Tailwind - we use the [tw prop](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md):
 
 ```tsx
 import 'twin.macro'
@@ -62,7 +59,8 @@ const Component = () => (
 )
 ```
 
-- Any import from twin.macro activates the tw prop
+- Use the tw prop when conditional styles are not needed
+- Any import from twin.macro activates the [tw prop](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md)
 - Add the tw prop automatically using [babel-plugin-twin](https://github.com/ben-rogerson/babel-plugin-twin)
 
 ## Conditional styling
@@ -84,9 +82,9 @@ const Component = ({ hasDarkTheme }) => (
 
 When tailwind class sets become larger, they obstruct the readability of jsx props.
 
-Since we're in JavaScript, we don’t need to settle for bloated prop lists, so we can move them out of jsx.
+Since we’re in JavaScript, we don’t need to settle for bloated prop lists, so we can move them out of jsx.
 
-A great solution is to group our styles together as named entries in an object:
+To group our styles together outside jsx, we can add them as named entries in an object:
 
 ```js
 import tw from 'twin.macro'
@@ -135,13 +133,15 @@ const Component = props => (
 
 </details>
 
-## Interpolated
+### Passing props with many values
 
-## Adding custom css
+// ...
+
+## Custom css
 
 Sometimes we need to supplement our tailwind styles with some vanilla css - either when a tailwind class isn’t available or to add custom values (eg: `transform: scale(1.02)`). For this, Twin has a syntax called “short css” which allows us to write custom css beside our tailwind classes.
 
-To add short css, use this syntax: `css-property[ css-value ]`
+To add short css, use this syntax: `css-property[css-value]`
 
 ### Basic css styling
 
@@ -248,7 +248,7 @@ const cssStyles = css(`max-width: calc(100vw - 1em);`)
 <div css={[tw`block`, cssStyles]}>
 ```
 
-## Pro styling tips
+## Styling tips
 
 ### ✓ Keep line lengths shorter with booleans
 
