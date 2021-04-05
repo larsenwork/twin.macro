@@ -1,52 +1,8 @@
-# The prop-styling guide
-
-- [Basic styling](#basic-styling)
-- [Conditional styling](#conditional-styling)
-- [Custom css](#custom-css)
-- [Styling tips](#styling-tips)
-
-There are two ways to style in twin:
-
-1. [Create styled components with the styled import](https://github.com/ben-rogerson/twin.macro/blob/master/docs/styled-import-guide.md)
-2. Style existing elements with the tw and css props **<- You are here**
-
-## Why use prop styling
-
-Here are some reasons why you might choose to style with props:
-
-**It’s similar to styling with tailwind**<br/>Instead of adding classes in the `class` attribute, they get added in the `tw` prop:
-
-```js
-// In tailwind
-;<div class="bg-black text-white"></div>
-
-// In twin.macro
-;<div tw="bg-black text-white"></div>
-```
-
-> Twin can also convert classes added in the `className` attribute with the [includeClassNames](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md#includeClassNames) feature.
-
-**Better debugging in devtools**<br/>After twin converts your classes, they are added to a `data-tw` prop for easier trace backs:
-
-```js
-<div class="n644fs2" data-tw="bg-black text-white"></div>
-```
-
-> The [data-tw prop](<(https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md#dataTwProp)>) only shows in development (by default)
-
-**Less imports to use**<br/>
-A single nameless import activates the tw prop:
-
-```js
-import 'twin.macro'
-;<div tw="bg-black text-white"></div>
-```
-
-> Install [babel-plugin-twin](https://github.com/ben-rogerson/babel-plugin-twin) to use the `tw` prop without an import.
+# The prop styling guide
 
 ## Basic styling
 
-Instead of adding classes in the `class` or `className` attribute - like we do in Tailwind - we use the [tw prop](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md):
+Use Twin’s tw prop to add Tailwind classes onto jsx elements:
 
 ```tsx
 import 'twin.macro'
@@ -59,46 +15,90 @@ const Component = () => (
 )
 ```
 
-- Use the tw prop when conditional styles are not needed
-- Any import from twin.macro activates the [tw prop](https://github.com/ben-rogerson/twin.macro/blob/master/docs/options.md)
+- Use the tw prop when conditional styles aren’t needed
+- Any import from `twin.macro` activates the tw prop
 - Add the tw prop automatically using [babel-plugin-twin](https://github.com/ben-rogerson/babel-plugin-twin)
 
 ## Conditional styling
 
-To add conditional or multi-line styles, use twin’s `tw` import within the `css` prop:
+To add conditional styles, import `tw` and nest it within an array inside the `css` prop which comes with your css-in-js library:
 
 ```js
 import tw from 'twin.macro'
 
-const Component = ({ hasDarkTheme }) => (
-  <div css={[tw`flex w-full`, hasDarkTheme && tw`bg-black`]}>
+const Component = ({ hasBg }) => (
+  <div
+    css={[
+      tw`flex w-full`, // Add base styles first
+      hasBg && tw`bg-black`, // Then add conditional styles
+    ]}
+  >
     <div tw="w-1/2" />
     <div tw="w-1/2" />
   </div>
 )
 ```
 
-### Keeping jsx clean
+<details>
 
-When tailwind class sets become larger, they obstruct the readability of jsx props.
+<summary>TypeScript example</summary>
 
-Since we’re in JavaScript, we don’t need to settle for bloated prop lists, so we can move them out of jsx.
+```tsx
+import tw from 'twin.macro'
 
-To group our styles together outside jsx, we can add them as named entries in an object:
+interface ComponentProps {
+  hasBg?: string
+}
+
+const Component = ({ hasBg }: ComponentProps) => (
+  <div
+    css={[
+      tw`flex w-full`, // Add base styles first
+      hasBg && tw`bg-black`, // Then add conditional styles
+    ]}
+  >
+    <div tw="w-1/2" />
+    <div tw="w-1/2" />
+  </div>
+)
+```
+
+</details>
+
+- Adding values to an array makes it easier to define base styles, conditionals and vanilla css
+- Use multiple lines to organize styles within the backticks (or [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals))
+
+## Overriding styles
+
+Use the `tw` prop to override styles added by the css prop:
+
+```tsx
+import tw from 'twin.macro'
+
+const Component = () => (
+  <Component css={tw`text-white`} tw="text-black" /> // This will have black text
+)
+```
+
+## Keeping jsx clean
+
+It’s no secret that when tailwind class sets become larger, they obstruct the readability of other jsx props.
+
+To clean up the jsx, lift out the styles and group them as named entries in an object:
 
 ```js
 import tw from 'twin.macro'
 
 const styles = {
-  container: ({ hasDarkTheme }) => [
+  container: ({ hasBg }) => [
     tw`flex w-full`, // Add base styles first
-    hasDarkTheme && tw`bg-black`, // Then add conditional styles
+    hasBg && tw`bg-black`, // Then add conditional styles
   ],
   column: tw`w-1/2`,
 }
 
-const Component = props => (
-  <div css={styles.container(props)}>
+const Component = ({ hasBg }) => (
+  <div css={styles.container({ hasBg })}>
     <div css={styles.column} />
     <div css={styles.column} />
   </div>
@@ -111,20 +111,20 @@ const Component = props => (
 ```js
 import tw from 'twin.macro'
 
-interface containerProps {
-  hasDarkTheme?: boolean;
+interface ContainerProps {
+  hasBg?: boolean;
 }
 
 const styles = {
-  container: ({ hasDarkTheme }: containerProps) => [
+  container: ({ hasBg }: ContainerProps) => [
     tw`flex w-full`, // Add base styles first
-    hasDarkTheme && tw`bg-black`, // Then add conditional styles
+    hasBg && tw`bg-black`, // Then add conditional styles
   ],
   column: tw`w-1/2`,
 }
 
-const Component = props => (
-  <div css={styles.container(props)}>
+const Component = ({ hasBg }: ContainerProps) => (
+  <div css={styles.container({ hasBg })}>
     <div css={styles.column} />
     <div css={styles.column} />
   </div>
@@ -133,17 +133,83 @@ const Component = props => (
 
 </details>
 
-### Passing props with many values
+## Variants with many values
 
-// ...
+When a variant has many values (eg: `variant="light/dark/crazy/..."`), name the class set in an object and use a prop to grab the entry:
+
+```js
+import tw, { styled } from 'twin.macro'
+
+const containerVariants = {
+  // Named class sets
+  light: tw`bg-white text-black`,
+  dark: tw`bg-black text-white`,
+}
+
+const styles = {
+  container: ({ variant = 'dark' }) => [
+    tw`flex w-full`,
+    containerVariants[variant], // Grab the variant style via a prop
+  ],
+  column: tw`w-1/2`,
+}
+
+const Component = ({ variant }) => (
+  <div css={styles.container({ variant })}>
+    <div css={styles.column} />
+    <div css={styles.column} />
+  </div>
+)
+
+export { Component }
+```
+
+<details>
+  <summary>TypeScript example</summary>
+
+```tsx
+import tw, { styled, TwStyle } from 'twin.macro'
+
+type WrapperVariant = 'light' | 'dark' | 'crazy'
+
+interface ContainerProps {
+  variant?: WrapperVariant
+}
+
+const containerVariants: Record<WrapperVariant, TwStyle> = {
+  light: tw`bg-white text-black`,
+  dark: tw`bg-black text-white`,
+}
+
+const styles = {
+  container: ({ variant = 'dark' }: ContainerProps) => [
+    tw`flex w-full`,
+    containerVariants[variant], // Grab the variant style via a prop
+  ],
+  column: tw`w-1/2`,
+}
+
+const Component = ({ variant }: ContainerProps) => (
+  <div css={styles.container({ variant })}>
+    <div css={styles.column} />
+    <div css={styles.column} />
+  </div>
+)
+
+export { Component }
+```
+
+</details>
+
+- Due to limitations in Babel, classes can’t be passed in from props, eg: `` tw`bg-${color}` ``
 
 ## Custom css
 
-Sometimes we need to supplement our tailwind styles with some vanilla css - either when a tailwind class isn’t available or to add custom values (eg: `transform: scale(1.02)`). For this, Twin has a syntax called “short css” which allows us to write custom css beside our tailwind classes.
+Basic css is added with twin using the “short css” syntax or within the css prop which supports more advanced use cases like dynamic values.
 
-To add short css, use this syntax: `css-property[css-value]`
+### Simple css styling
 
-### Basic css styling
+To add simple custom styling, use twins “short css” syntax:
 
 ```js
 // Set content properties for pseudo elements
@@ -160,42 +226,46 @@ To add short css, use this syntax: `css-property[css-value]`
 
 // Set grid areas
 <div tw="grid-area[1 / 1 / 4 / 2]" />
-
-// Set crazy grid values (expand long values over multiple lines)
-<div css={tw`grid-template-areas['
-  "z z z"
-  "a b c"
-  "d e f"
-']`} />
 ```
 
-Short css also works seamlessly with twin’s variant grouping features:
+Use short css with twin’s variants and grouping features:
 
 ```js
-<div tw="md:(block max-width[calc(100vw - 2em)])" />
+<div tw="block md:(relative max-width[calc(100vw - 2em)])" />
 ```
 
-#### Tips
+Short css also works with the `tw` import:
 
-- Add a trailing bang to make the custom css !important: `maxWidth[2rem]!`
-- You can add short css into twin’s `cs` prop to separate short css from tw classes: `<div cs="maxWidth[2rem]" />`
-- Supports camelCased css properties: `maxWidth[2rem]`
-- Interpolated variables aren’t supported
+```js
+import tw from 'twin.macro'
+
+const styles = tw`
+  block
+  md:(relative max-width[calc(100vw - 2em)])
+`
+
+const Component = () => <div css={styles} />
+```
+
+- Add a trailing bang to make the custom css !important: `max-width[2rem]!`
+- To keep short css separate from tw classes, add it in the `cs` prop: `<div cs="max-width[2rem]" />`
+- Short css may be added with camelCase properties: `maxWidth[2rem]`
+- Interpolation/dynamic values aren’t supported
 
 ### Advanced css styling
 
-[intro about switching to the css prop for this]
-[Supports interpolated variables, eg: `${size}`]
-[Something about being sass-like with the & selector]
+Advanced css can be added with the css prop which comes with the css-in-js library.
 
-The css prop allows styles in template literals:
+This css prop supports interpolated variables and dynamic styles:
 
 ```js
-import { css } from 'twin.macro'
+import { css, theme } from 'twin.macro'
 
 const Components = () => (
   <input
     css={css`
+      ${tw`text-black`};
+      background-color: ${theme`colors.red.500`};
       max-width: calc(100vw - 1em);
       &::selection {
         ${tw`text-purple-500`};
@@ -205,32 +275,29 @@ const Components = () => (
 )
 ```
 
-- Wrap the styles with the `css` import to apply css highlighting in your code editor
-- Using interpolated variables (`${var}`) make larger style sets harder to read
-- Semicolons must be added at the end of each line
+- Prefix css styles with the `css` import to apply css highlighting in your editor
+- Add semicolons to the end of each line
 
-Write styles in css object format to lean more into classic css-in-js styling:
+You can avoid the interpolation cruft above by using object styles instead:
 
 ```js
-import { css } from 'twin.macro'
+import { css, theme } from 'twin.macro'
 
 const Components = () => (
   <input
     css={{
-      maxWidth: 'calc(100vw - 1em)',
-      marginTop: '400px',
+      ...tw`text-blue-500 border-2`,
+      backgroundColor: theme`colors.red.500`,
+      maxWidth: 'calc(100vw - 1em)', // css properties are camel cased
       '&::selection': tw`text-purple-500`,
     }}
   />
 )
 ```
 
-- Shorter and cleaner syntax for styling sub selectors and anything complex
-- Slightly faster speeds in the underlying css-in-js library as conversion from backticks is not required
-
 ### Mixing css with tailwind classes
 
-Add custom css by placing the styles in an array:
+Mix tailwind classes and custom css in an array:
 
 ```js
 import tw from 'twin.macro'
@@ -238,7 +305,7 @@ import tw from 'twin.macro'
 <div css={[tw`block`, `max-width: calc(100vw - 1em);`]}>
 ```
 
-Nest vanilla css within the `css` import when they’re extracted from the jsx element:
+When you move the styles out of jsx, prefix them with the `css` import:
 
 ```js
 import tw, { css } from 'twin.macro'
@@ -252,7 +319,7 @@ const cssStyles = css(`max-width: calc(100vw - 1em);`)
 
 ### ✓ Keep line lengths shorter with booleans
 
-Ternaries are great to use for smaller class sets:
+Ternaries are great for small class sets:
 
 ```js
 const inputStyles = ({ hasDarkTheme }) => [
@@ -260,7 +327,7 @@ const inputStyles = ({ hasDarkTheme }) => [
 ]
 ```
 
-But for longer sets of classes, use booleans to keep line lengths short:
+With longer class sets, use booleans to keep line lengths short:
 
 ```js
 const inputStyles = ({ hasDarkTheme }) => [
@@ -271,27 +338,25 @@ const inputStyles = ({ hasDarkTheme }) => [
 
 ### ✓ Move common styles to a shared styling file
 
-Reusable classes get named and shifted into a shared styles file:
+Reusable styles should be shifted into a shared file:
 
 ```js
-// sharedStyles.js
-export const defaultLayout = {
-  // Styles with conditionals are functions
+// commonStyles.js
+export const layout = {
   container: ({ hasDarkTheme }) => [
     tw`flex w-full`,
     hasDarkTheme && tw`bg-black text-white`,
   ],
-  // Styles with no conditionals
   column: tw`w-1/2 border-t`,
 }
 ```
 
-Import then add the shared styles with the css prop:
+Attach shared styles to jsx elements with the css prop:
 
 ```js
 // app.js
 import 'twin.macro'
-import { defaultLayout as layout } from './sharedStyles'
+import { layout } from './commonStyles'
 
 const Component = ({ hasDarkTheme }) => (
   <div css={layout.container({ hasDarkTheme })}>
@@ -303,7 +368,7 @@ const Component = ({ hasDarkTheme }) => (
 
 ### ✓ Use class grouping with large styling sets
 
-Group large style sets by type on their own lines:
+Group large style sets by their type on multiple lines:
 
 ```js
 const styles = tw`
@@ -314,15 +379,27 @@ const styles = tw`
 const Component = () => <div css={styles} />
 ```
 
-Or group classes with parenthesis: `<div tw="block (ml-1 mr-2)" />`
+Or use brackets or pipes for single line grouping:
 
-Or separate groups with pipes: `<div tw="block | ml-1 mr-2" />`
+```js
+<div tw="block (ml-1 mr-2)" />
+// or
+<div tw="block | ml-1 mr-2" />
+```
+
+### ✓ Avoid using css-in-js for complex animation
+
+If you are - for instance - changing an element’s position frequently, consider using the style prop instead or even better, use [framer-motion](https://www.framer.com/motion/) or [GSAP](https://greensock.com/react/).
 
 ## Learn more
 
 - The styled components guide (soon)
-- '[container](./container.md)', '[group](./group.md)' - Usage docs for these classes in twin
-- [Advanced theming](docs/advanced-theming.md) - Add custom theming the right way using css variables
+- Class docs: '[container](https://github.com/ben-rogerson/twin.macro/blob/master/docs/container.md)', '[group](https://github.com/ben-rogerson/twin.macro/blob/master/docs/group.md)' - More about these classes that work differently
+- [Advanced theming](https://github.com/ben-rogerson/twin.macro/blob/master/docs/advanced-theming.md) - Add custom theming the right way using css variables
+
+If you have any questions, feel free to [drop into our Discord server](https://discord.gg/Xj6x9z7).
+
+<a href="https://discord.gg/Xj6x9z7"><img src="https://img.shields.io/discord/705884695400939552?label=discord&logo=discord" alt="Discord"></a>
 
 ## Resources
 
